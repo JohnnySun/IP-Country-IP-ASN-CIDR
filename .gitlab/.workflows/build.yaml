@@ -1,0 +1,63 @@
+name: Generator ipcidr for specific asn in specific area
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * *"
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - ".gitignore"
+      - "output/"
+      - "asn.csv"
+      - "country_asn.csv"
+      - "LICENSE"
+      - "README.md"
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        # This is the version of the action for setting up Python, not the Python version.
+        uses: actions/setup-python@v5
+        with:
+          # Semantic version range syntax or exact version of a Python version
+          python-version: '3.x'
+          # Optional - x64 or x86 architecture, defaults to x64
+          architecture: 'x64'
+      - name: Set variables
+        run: |
+          echo "RELEASE_NAME=$(date +%Y%m%d%H%M)" >> $GITHUB_ENV
+        shell: bash
+      - name: Get IPInfo.io IP2Country
+        env:
+          LICENSE_KEY: ${{ secrets.IPINFO_TOKEN }}
+        run: |
+          wget "https://ipinfo.io/data/free/country_asn.csv.gz?token=${LICENSE_KEY}" -o - | gzip -d > country_asn.csv
+          wget "https://ipinfo.io/data/free/asn.csv.gz?token=${LICENSE_KEY}" -o - | gzip -d > asn.csv
+
+#      - name: Append more CIDRs
+#        run: |
+#           echo "127.0.0.1/32" > data/private
+#          curl -sSL https://www.gstatic.com/ipranges/goog.json | jq --raw-output '.prefixes[].ipv4Prefix,.prefixes[].ipv6Prefix | select(. != null)' >> data/google
+#          curl -sSL https://www.gstatic.com/ipranges/cloud.json | jq --raw-output '.prefixes[].ipv4Prefix,.prefixes[].ipv6Prefix | select(. != null)' >> data/google
+#          curl -sSL https://api.fastly.com/public-ip-list | jq --raw-output '.addresses[],.ipv6_addresses[]' >> data/fastly
+#          curl -sSL https://ip-ranges.amazonaws.com/ip-ranges.json | jq --raw-output '.prefixes[],.ipv6_prefixes[] | select(.service == "CLOUDFRONT") | .ip_prefix,.ipv6_prefix' | grep "/" >> data/cloudfront
+      - name: Run get_asn_cidr.py
+        run: python3 get_asn_cidr.py list
+
+      - name: Git push assets to "release" branch
+        run: |
+          cd output || exit 1
+          echo "${{ env.RELEASE_NAME }}" > version
+          git init
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b release
+          git add -A
+          git commit -m "${{ env.RELEASE_NAME }}"
+          git remote add remote "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
+          git push -f -u remote release
