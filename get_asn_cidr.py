@@ -115,7 +115,7 @@ def get_asn_ipcidr(file_path, asn, ip_version):
     directory = f"output/{asn}"
     if not os.path.exists(directory):
         os.makedirs(directory)
-    with open(f"{directory}/{asn}_IPV{ip_version}.cidr", 'w') as file:
+    with open(f"{directory}/IPV{ip_version}.cidr", 'w') as file:
         for row in csv_reader:
             if row['asn'] == str(asn) or str(asn) == "ALL" :
                 save_ipcidr(row['start_ip'], row['end_ip'], ip_version, file)
@@ -129,7 +129,7 @@ def get_asn_ipcidr_for_specific_area(file_path, asn, continent, country, ip_vers
     directory = f"output/{asn}"
     if not os.path.exists(directory):
         os.makedirs(directory)
-    with open(f"{directory}/{asn}_{continent}_{country}_IPV{ip_version}.cidr", 'w') as file:
+    with open(f"{directory}/{continent}_{country}_IPV{ip_version}.cidr", 'w') as file:
         for row in csv_reader:
             if  ( row['asn'] == str(asn) or str(asn) == "ALL" ) \
             and ( row['continent'] == str(continent) or str(continent) == "ALL" ) \
