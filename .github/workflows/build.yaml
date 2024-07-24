@@ -1,4 +1,4 @@
-name: Generator ipcidr for specific asn in specific area
+name: Generator ipcidr in list
 on:
   workflow_dispatch:
   schedule:
