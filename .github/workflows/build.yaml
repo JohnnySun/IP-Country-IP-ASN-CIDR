@@ -36,8 +36,8 @@ jobs:
         env:
           LICENSE_KEY: ${{ secrets.IPINFO_TOKEN }}
         run: |
-          wget "https://ipinfo.io/data/free/country_asn.csv.gz?token=${LICENSE_KEY}" -o - | gzip -d > country_asn.csv
-          wget "https://ipinfo.io/data/free/asn.csv.gz?token=${LICENSE_KEY}" -o - | gzip -d > asn.csv
+          wget "https://ipinfo.io/data/free/country_asn.csv.gz?token=${LICENSE_KEY}" -O - | gzip -d > country_asn.csv
+          wget "https://ipinfo.io/data/free/asn.csv.gz?token=${LICENSE_KEY}" -O - | gzip -d > asn.csv
 
 #      - name: Append more CIDRs
 #        run: |
