@@ -112,7 +112,7 @@ def get_asn_ipcidr(file_path, asn, ip_version):
     matching_lines = find_asn_lines(file_path, asn)
     header = next(matching_lines)
     csv_reader = csv.DictReader(StringIO('\n'.join([header] + list(matching_lines))))
-    directory = "output"
+    directory = f"output/{asn}"
     if not os.path.exists(directory):
         os.makedirs(directory)
     with open(f"{directory}/{asn}_IPV{ip_version}.cidr", 'w') as file:
@@ -126,7 +126,7 @@ def get_asn_ipcidr_for_specific_area(file_path, asn, continent, country, ip_vers
     matching_lines = find_asn_lines(file_path, asn)
     header = next(matching_lines)
     csv_reader = csv.DictReader(StringIO('\n'.join([header] + list(matching_lines))))
-    directory = "output"
+    directory = f"output/{asn}"
     if not os.path.exists(directory):
         os.makedirs(directory)
     with open(f"{directory}/{asn}_{continent}_{country}_IPV{ip_version}.cidr", 'w') as file:
