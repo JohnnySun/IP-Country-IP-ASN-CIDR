@@ -161,8 +161,11 @@ if len(sys.argv) == 2 :
    with open(sys.argv[1], 'r') as file:
         lines = file.readlines()
         for line in lines:
-            # 使用 split() 方法将每一行按空格分割成多个参数
-            argv = line.strip().split()
+            stripped_line = line.strip()
+            if not stripped_line or stripped_line.startswith('#'):
+                continue
+            # split line into argv
+            argv = stripped_line.split()
             if len(argv) == 2:
                 func_asn_ipcidr(argv[0], argv[1])
             elif len(argv) == 4:
