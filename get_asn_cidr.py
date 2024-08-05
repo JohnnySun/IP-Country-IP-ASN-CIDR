@@ -152,7 +152,7 @@ def save_ipcidr(start_ip, end_ip, ip_version, file, exculde_v4_cidrs, exculde_v6
             file.write(''.join(cidr) + '\n')
     elif int(start_ip_version) == 6 and int(ip_version) == int(start_ip_version) :
         cidr = ip_range_to_cidr_v6(start_ip, end_ip)
-         if exclude_v6_cidrs is None or not is_cidr_in_cidr_list(cidr, exculde_v6_cidrs) :
+        if exclude_v6_cidrs is None or not is_cidr_in_cidr_list(cidr, exculde_v6_cidrs) :
             # if cidr not in exculde_cidr_list, save it to files
             file.write(''.join(cidr) + '\n')
 
