@@ -89,7 +89,7 @@ def fetch_cidr_list_from_url(url):
         print(f"Error fetching CIDR list from URL: {e}")
         return []
 
-def is_cidt_in_cidr_list(input_cidr, cidr_list):
+def is_cidr_in_cidr_list(input_cidr, cidr_list):
     """
     Check if the given IP address is in any of the given CIDR ranges.
 
