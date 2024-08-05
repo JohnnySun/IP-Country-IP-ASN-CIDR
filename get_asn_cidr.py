@@ -3,6 +3,7 @@
 
 from io import StringIO
 import os
+import requests
 import ipaddress
 import csv
 import json
@@ -72,6 +73,50 @@ def ip_range_to_cidr_v6(start_ip, end_ip):
 
     return "\n".join(cidr_list)
 
+def fetch_cidr_list_from_url(url):
+    """
+    Fetch a list of CIDR ranges from a given URL.
+
+    :param url: str, URL to fetch the CIDR list from
+    :return: list of str, CIDR ranges
+    """
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        cidr_list = response.text.splitlines()
+        return [cidr.strip() for cidr in cidr_list if cidr.strip()]
+    except requests.RequestException as e:
+        print(f"Error fetching CIDR list from URL: {e}")
+        return []
+
+def is_cidt_in_cidr_list(input_cidr, cidr_list):
+    """
+    Check if the given IP address is in any of the given CIDR ranges.
+
+    :param ip: str, IP address (IPv4 or IPv6) to check
+    :param cidr_list: list of str, CIDR ranges to check against
+    :return: bool, True if IP is in any CIDR range, False otherwise
+    """
+    for cidr in cidr_list:
+        if is_cidr_in_cidr(input_cidr, cidr):
+            return True
+    return False
+
+def is_cidr_in_cidr(cidr1, cidr2):
+    """
+    Check if the given CIDR range cidr1 is within the given CIDR range cidr2, or if they are equal.
+
+    :param cidr1: str, CIDR range to check if it's within or equal to cidr2
+    :param cidr2: str, CIDR range to check against
+    :return: bool, True if cidr1 is within or equal to cidr2, False otherwise
+    """
+    try:
+        cidr1_obj = ipaddress.ip_network(cidr1, strict=False)
+        cidr2_obj = ipaddress.ip_network(cidr2, strict=False)
+        return cidr1_obj.subnet_of(cidr2_obj) or cidr1_obj == cidr2_obj
+    except ValueError:
+        return False
+
 def check_ip_version(ip):
     try:
         ip_obj = ipaddress.ip_address(ip)
@@ -98,14 +143,18 @@ def find_asn_lines(file_path, target_asn):
         print(f"Error occurred: {e.stderr}")
 
 # calc and output ipcidr
-def save_ipcidr(start_ip, end_ip, ip_version, file):
+def save_ipcidr(start_ip, end_ip, ip_version, file, exculde_v4_cidrs, exculde_v6_cidrs):
     start_ip_version = check_ip_version(start_ip)
     if int(start_ip_version) == 4 and int(ip_version) == int(start_ip_version) :
         cidr = ip_range_to_cidr_v4(start_ip, end_ip)
-        file.write(''.join(cidr) + '\n')
+        if exclude_v4_cidrs is None or not is_cidr_in_cidr_list(cidr, exculde_v4_cidrs) :
+            # if cidr not in exculde_cidr_list, save it to files
+            file.write(''.join(cidr) + '\n')
     elif int(start_ip_version) == 6 and int(ip_version) == int(start_ip_version) :
         cidr = ip_range_to_cidr_v6(start_ip, end_ip)
-        file.write(''.join(cidr) + '\n')
+         if exclude_v6_cidrs is None or not is_cidr_in_cidr_list(cidr, exculde_v6_cidrs) :
+            # if cidr not in exculde_cidr_list, save it to files
+            file.write(''.join(cidr) + '\n')
 
 # start_ip,end_ip,asn,name,domain
 def get_asn_ipcidr(file_path, asn, ip_version):
@@ -118,11 +167,11 @@ def get_asn_ipcidr(file_path, asn, ip_version):
     with open(f"{directory}/IPV{ip_version}.cidr", 'w') as file:
         for row in csv_reader:
             if row['asn'] == str(asn) or str(asn) == "ALL" :
-                save_ipcidr(row['start_ip'], row['end_ip'], ip_version, file)
+                save_ipcidr(row['start_ip'], row['end_ip'], ip_version, file, None, None)
      
 
 # start_ip,end_ip,country,country_name,continent,continent_name,asn,as_name,as_domain
-def get_asn_ipcidr_for_specific_area(file_path, asn, continent, country, ip_version):
+def get_asn_ipcidr_for_specific_area(file_path, asn, continent, country, ip_version, exculde_v4_cidrs, exculde_v6_cidrs):
     matching_lines = find_asn_lines(file_path, asn)
     header = next(matching_lines)
     csv_reader = csv.DictReader(StringIO('\n'.join([header] + list(matching_lines))))
@@ -134,7 +183,7 @@ def get_asn_ipcidr_for_specific_area(file_path, asn, continent, country, ip_vers
             if  ( row['asn'] == str(asn) or str(asn) == "ALL" ) \
             and ( row['continent'] == str(continent) or str(continent) == "ALL" ) \
             and ( row['country'] == str(country) or str(country) == "ALL" ):
-                save_ipcidr(row['start_ip'], row['end_ip'], ip_version, file)
+                save_ipcidr(row['start_ip'], row['end_ip'], ip_version, file, exculde_v4_cidrs, exculde_v6_cidrs)
 
 def func_asn_ipcidr(target_asn, ip_version) :
     file_path = "asn.csv"
@@ -143,12 +192,12 @@ def func_asn_ipcidr(target_asn, ip_version) :
     else:
         get_asn_ipcidr(file_path, target_asn, ip_version)
 
-def func_asn_ipcidr_for_specific_area(target_asn, continent, country, ip_version) :
+def func_asn_ipcidr_for_specific_area(target_asn, continent, country, ip_version, exculde_v4_cidrs, exculde_v6_cidrs) :
     file_path = "country_asn.csv"
     if int(ip_version) != 4 and int(ip_version) != 6:
         print(f"Error: ip_version must be 4 or 6, but you give {ip_version}")
     else:
-        get_asn_ipcidr_for_specific_area(file_path, target_asn, continent, country, ip_version)
+        get_asn_ipcidr_for_specific_area(file_path, target_asn, continent, country, ip_version, exculde_v4_cidrs, exculde_v6_cidrs)
 
 
 if len(sys.argv) != 2 and len(sys.argv) != 3 and len(sys.argv) != 5:
@@ -156,6 +205,11 @@ if len(sys.argv) != 2 and len(sys.argv) != 3 and len(sys.argv) != 5:
     print(f"Usage: python3 {sys.argv[0]} <asn> <ip_version 4 or 6>")
     print(f"Usage: python3 {sys.argv[0]} <asn> <continent> <country> <ip_version 4 or 6>")
     sys.exit(1)
+
+anycatch_v4_prefixes_url = "https://raw.githubusercontent.com/bgptools/anycast-prefixes/master/anycatch-v4-prefixes.txt"
+anycatch_v6_prefixes_url = "https://raw.githubusercontent.com/bgptools/anycast-prefixes/master/anycatch-v6-prefixes.txt"
+anycast_v4_cidr_list = fetch_cidr_list_from_url(anycatch_v4_prefixes_url)
+anycast_v6_cidr_list = fetch_cidr_list_from_url(anycatch_v6_prefixes_url)
 
 if len(sys.argv) == 2 :
    with open(sys.argv[1], 'r') as file:
@@ -169,7 +223,7 @@ if len(sys.argv) == 2 :
             if len(argv) == 2:
                 func_asn_ipcidr(argv[0], argv[1])
             elif len(argv) == 4:
-                func_asn_ipcidr_for_specific_area(argv[0], argv[1], argv[2], argv[3])
+                func_asn_ipcidr_for_specific_area(argv[0], argv[1], argv[2], argv[3], anycast_v4_cidr_list, anycast_v6_cidr_list)
 
         
 
@@ -177,4 +231,4 @@ if len(sys.argv) == 3 :
     func_asn_ipcidr(sys.argv[1], sys.argv[2])
 
 if len(sys.argv) == 5 :
-    func_asn_ipcidr_for_specific_area(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
+    func_asn_ipcidr_for_specific_area(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], anycast_v4_cidr_list, anycast_v6_cidr_list)
