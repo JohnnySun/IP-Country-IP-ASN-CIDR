@@ -157,7 +157,7 @@ def save_ipcidr(start_ip, end_ip, ip_version, file, exclude_v4_cidrs, exclude_v6
             file.write(''.join(cidr) + '\n')
 
 # start_ip,end_ip,asn,name,domain
-def get_asn_ipcidr(file_path, asn, ip_version, exclude_country):
+def get_asn_ipcidr(file_path, asn, ip_version):
     matching_lines = find_asn_lines(file_path, asn)
     header = next(matching_lines)
     csv_reader = csv.DictReader(StringIO('\n'.join([header] + list(matching_lines))))
@@ -166,8 +166,7 @@ def get_asn_ipcidr(file_path, asn, ip_version, exclude_country):
         os.makedirs(directory)
     with open(f"{directory}/IPV{ip_version}.cidr", 'w') as file:
         for row in csv_reader:
-            if ( row['asn'] == str(asn) or str(asn) == "ALL" ) \
-            and ( row['country'] != str(exclude_country) ):
+            if row['asn'] == str(asn) or str(asn) == "ALL" :
                 save_ipcidr(row['start_ip'], row['end_ip'], ip_version, file, None, None)
      
 
@@ -191,12 +190,12 @@ def get_asn_ipcidr_for_specific_area(file_path, asn, continent, country, ip_vers
             and ( row['country'] != str(exclude_country) ):
                 save_ipcidr(row['start_ip'], row['end_ip'], ip_version, file, exclude_v4_cidrs, exclude_v6_cidrs)
 
-def func_asn_ipcidr(target_asn, ip_version, exclude_country) :
+def func_asn_ipcidr(target_asn, ip_version) :
     file_path = "asn.csv"
     if int(ip_version) != 4 and int(ip_version) != 6:
         print(f"Error: ip_version must be 4 or 6, but you give {ip_version}")
     else:
-        get_asn_ipcidr(file_path, target_asn, ip_version, exclude_country)
+        get_asn_ipcidr(file_path, target_asn, ip_version)
 
 def func_asn_ipcidr_for_specific_area(target_asn, continent, country, ip_version, exclude_v4_cidrs, exclude_v6_cidrs, exclude_country) :
     file_path = "country_asn.csv"
@@ -228,14 +227,14 @@ if len(sys.argv) == 2 :
             # split line into argv
             argv = stripped_line.split()
             if len(argv) == 2:
-                func_asn_ipcidr(argv[0], argv[1], exclude_country)
+                func_asn_ipcidr(argv[0], argv[1])
             elif len(argv) == 4:
                 func_asn_ipcidr_for_specific_area(argv[0], argv[1], argv[2], argv[3], anycast_v4_cidr_list, anycast_v6_cidr_list, exclude_country)
 
         
 
 if len(sys.argv) == 3 :
-    func_asn_ipcidr(sys.argv[1], sys.argv[2], exclude_country)
+    func_asn_ipcidr(sys.argv[1], sys.argv[2])
 
 if len(sys.argv) == 5 :
     func_asn_ipcidr_for_specific_area(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], anycast_v4_cidr_list, anycast_v6_cidr_list, exclude_country)
