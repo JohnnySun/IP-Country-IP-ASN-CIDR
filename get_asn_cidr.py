@@ -204,37 +204,37 @@ def func_asn_ipcidr_for_specific_area(target_asn, continent, country, ip_version
     else:
         get_asn_ipcidr_for_specific_area(file_path, target_asn, continent, country, ip_version, exclude_v4_cidrs, exclude_v6_cidrs, exclude_country)
 
+if __name__ == "__main__":
+    if len(sys.argv) != 2 and len(sys.argv) != 3 and len(sys.argv) != 5:
+        print(f"Usage: python3 {sys.argv[0]} <arg_list_file>")
+        print(f"Usage: python3 {sys.argv[0]} <asn> <ip_version 4 or 6>")
+        print(f"Usage: python3 {sys.argv[0]} <asn> <continent> <country> <ip_version 4 or 6>")
+        sys.exit(1)
 
-if len(sys.argv) != 2 and len(sys.argv) != 3 and len(sys.argv) != 5:
-    print(f"Usage: python3 {sys.argv[0]} <arg_list_file>")
-    print(f"Usage: python3 {sys.argv[0]} <asn> <ip_version 4 or 6>")
-    print(f"Usage: python3 {sys.argv[0]} <asn> <continent> <country> <ip_version 4 or 6>")
-    sys.exit(1)
+    anycatch_v4_prefixes_url = "https://raw.githubusercontent.com/bgptools/anycast-prefixes/master/anycatch-v4-prefixes.txt"
+    anycatch_v6_prefixes_url = "https://raw.githubusercontent.com/bgptools/anycast-prefixes/master/anycatch-v6-prefixes.txt"
+    anycast_v4_cidr_list = fetch_cidr_list_from_url(anycatch_v4_prefixes_url)
+    anycast_v6_cidr_list = fetch_cidr_list_from_url(anycatch_v6_prefixes_url)
+    exclude_country = "CN"
 
-anycatch_v4_prefixes_url = "https://raw.githubusercontent.com/bgptools/anycast-prefixes/master/anycatch-v4-prefixes.txt"
-anycatch_v6_prefixes_url = "https://raw.githubusercontent.com/bgptools/anycast-prefixes/master/anycatch-v6-prefixes.txt"
-anycast_v4_cidr_list = fetch_cidr_list_from_url(anycatch_v4_prefixes_url)
-anycast_v6_cidr_list = fetch_cidr_list_from_url(anycatch_v6_prefixes_url)
-exclude_country = "CN"
+    if len(sys.argv) == 2 :
+    with open(sys.argv[1], 'r') as file:
+            lines = file.readlines()
+            for line in lines:
+                stripped_line = line.strip()
+                if not stripped_line or stripped_line.startswith('#'):
+                    continue
+                # split line into argv
+                argv = stripped_line.split()
+                if len(argv) == 2:
+                    func_asn_ipcidr(argv[0], argv[1])
+                elif len(argv) == 4:
+                    func_asn_ipcidr_for_specific_area(argv[0], argv[1], argv[2], argv[3], anycast_v4_cidr_list, anycast_v6_cidr_list, exclude_country)
 
-if len(sys.argv) == 2 :
-   with open(sys.argv[1], 'r') as file:
-        lines = file.readlines()
-        for line in lines:
-            stripped_line = line.strip()
-            if not stripped_line or stripped_line.startswith('#'):
-                continue
-            # split line into argv
-            argv = stripped_line.split()
-            if len(argv) == 2:
-                func_asn_ipcidr(argv[0], argv[1])
-            elif len(argv) == 4:
-                func_asn_ipcidr_for_specific_area(argv[0], argv[1], argv[2], argv[3], anycast_v4_cidr_list, anycast_v6_cidr_list, exclude_country)
+            
 
-        
+    if len(sys.argv) == 3 :
+        func_asn_ipcidr(sys.argv[1], sys.argv[2])
 
-if len(sys.argv) == 3 :
-    func_asn_ipcidr(sys.argv[1], sys.argv[2])
-
-if len(sys.argv) == 5 :
-    func_asn_ipcidr_for_specific_area(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], anycast_v4_cidr_list, anycast_v6_cidr_list, exclude_country)
+    if len(sys.argv) == 5 :
+        func_asn_ipcidr_for_specific_area(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], anycast_v4_cidr_list, anycast_v6_cidr_list, exclude_country)
