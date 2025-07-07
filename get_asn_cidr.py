@@ -218,7 +218,7 @@ if __name__ == "__main__":
     exclude_country = "CN"
 
     if len(sys.argv) == 2 :
-    with open(sys.argv[1], 'r') as file:
+        with open(sys.argv[1], 'r') as file:
             lines = file.readlines()
             for line in lines:
                 stripped_line = line.strip()
