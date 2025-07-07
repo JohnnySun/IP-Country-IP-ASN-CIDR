@@ -50,6 +50,9 @@ jobs:
 #          curl -sSL https://www.gstatic.com/ipranges/cloud.json | jq --raw-output '.prefixes[].ipv4Prefix,.prefixes[].ipv6Prefix | select(. != null)' >> data/google
 #          curl -sSL https://api.fastly.com/public-ip-list | jq --raw-output '.addresses[],.ipv6_addresses[]' >> data/fastly
 #          curl -sSL https://ip-ranges.amazonaws.com/ip-ranges.json | jq --raw-output '.prefixes[],.ipv6_prefixes[] | select(.service == "CLOUDFRONT") | .ip_prefix,.ipv6_prefix' | grep "/" >> data/cloudfront
+      - name: Run filter_anycast_cn_cidr.py
+        run: python3 filter_anycast_cn_cidr.py
+
       - name: Run get_asn_cidr.py
         run: python3 get_asn_cidr.py list
 
